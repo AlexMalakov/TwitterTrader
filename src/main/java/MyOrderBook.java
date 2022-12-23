@@ -1,6 +1,8 @@
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.trade.LimitOrder;
 
+import sun.invoke.empty.Empty;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,8 +45,8 @@ public class MyOrderBook {
     return sum;
   }
   //TODO: update
-  //calculates the price of an agressive purchase of a certain size
   /*
+  //calculates the price of an agressive purchase of a certain size
   public BigDecimal calculateBuyPriceSize(float amountBTC) {
     ArrayList<BigDecimal> sorted = new ArrayList<>(bids.keySet());
     Collections.sort(sorted);
@@ -62,11 +64,9 @@ public class MyOrderBook {
 
     }
     return sum;
-  }*/
+  }
 
   //given an XChange orderbook, maps price to amount for bid and ask
-  //TODO: CLEAN UP
-  /*
   public void update(OrderBook book) {
     for(LimitOrder order: book.getBids()) {
       if(bids.contains(new MyLimitOrder(order))) {
@@ -77,7 +77,7 @@ public class MyOrderBook {
     for(LimitOrder order: book.getAsks()) {
       asks.put(order.getLimitPrice(), order.getOriginalAmount());//not sure if this is correct
     }
-  }*/
+  } */
 }
 
 class BinaryHeap<T> {
@@ -106,7 +106,10 @@ interface BinHeap<T> {
   public BinHeap<T> append(T elem, int index, int current);
   public T getMin();
   public BinHeap<T> removeAndSwap(int index);
-  public BinHeap<T> locateIndex(int index);
+  public HeapNode<T> goTo(int index, int currentPos);
+  public BinHeap<T> heapify(); //ugly, need to have parent and children potentially swap
+  public BinHeap<T> heapifyNode(HeapNode<T> node);
+  public BinHeap<T> heapifyEmpty(EmptyNode<T> node);
 }
 
 class HeapNode<T> implements BinHeap<T>{
@@ -142,27 +145,50 @@ class HeapNode<T> implements BinHeap<T>{
   public BinHeap<T> removeAndSwap(int index) {
     BinHeap<T> leftSave = left;
     BinHeap<T> rightSave = right;
+    HeapNode<T> newStart = this.goTo(index, 1);
+    newStart.assignChildren(leftSave,rightSave);
+    newStart.heapify();
+    return null;
+  }
+
+  private void assignChildren(BinHeap<T> newLeft, BinHeap<T> newRight) {
+    this.left = newLeft;
+    this.right = newRight;
+  }
+
+  @Override
+  public HeapNode<T> goTo(int index, int currentPos) {
+    if(index == currentPos) {
+      return this;
+    }
+    int math = index;
+    while(!(math == currentPos*2 || math == currentPos*2 + 1)) {
+      math = math/2;
+    }
+    if(math%2 == 0) {
+      return this.left.goTo(index,math);
+    }else {
+      return this.right.goTo(index,math);
+    }
+  }
+
+  @Override
+  public BinHeap<T> heapify() {
+    this.left.heapifyNode(this);
+    this.right.heapifyNode(this);
+    return this;///////////////////////////////
+  }
+
+  @Override
+  public BinHeap<T> heapifyNode(HeapNode<T> node) {
     return null;
   }
 
   @Override
-  public BinHeap<T> locateIndex(int index) {
+  public BinHeap<T> heapifyEmpty(EmptyNode<T> node) {
     return null;
   }
 
-  //TODO: CLEAN UP
-  /*
-  public BinHeap<T> LocateAtIndex(int index) {
-    int math = index;
-    while(!(math == current*2 || math == current*2 + 1)) {
-      math = math/2;
-    }
-    if(math%2 == 0) {
-      this.left = this.left.append(element,index,math);
-    }else {
-      this.right = this.right.append(element,index,math);
-    }
-  }*/
 }
 
 class EmptyNode<T> implements BinHeap<T>{
@@ -183,7 +209,24 @@ class EmptyNode<T> implements BinHeap<T>{
   }
 
   @Override
-  public BinHeap<T> locateIndex(int index) {
-    return this;
+  public HeapNode<T> goTo(int index, int currentPos) {
+    throw new IndexOutOfBoundsException("cannot access an element not in the heap");
   }
+
+  @Override
+  public BinHeap<T> heapify() {
+    return null;
+  }
+
+  @Override
+  public BinHeap<T> heapifyNode(HeapNode<T> node) {
+    return null;
+  }
+
+  @Override
+  public BinHeap<T> heapifyEmpty(EmptyNode<T> node) {
+    return null;
+  }
+
+
 }
