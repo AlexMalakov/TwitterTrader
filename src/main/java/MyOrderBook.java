@@ -95,19 +95,21 @@ class BinaryHeap {
 
   public void insert(MyLimitOrder element) {
     list.add(element);
-    this.heapifyUp();
+    this.heapifyUp(this.list.size()-1);
   }
 
   public MyLimitOrder extractMin() {
     MyLimitOrder returnMe = this.list.get(0);
     this.list.set(0, list.get(list.size()-1));
     list.remove(list.size()-1);
-    this.heapifyDown();
+    this.heapifyDown(0);
     return returnMe;
   }
 
   public void updateN(int index, MyLimitOrder newValue) {
     this.list.set(index,newValue);
+    this.heapifyUp(index);
+    this.heapifyDown(index);
   }
 
   public boolean contains(MyLimitOrder order) {
@@ -123,8 +125,8 @@ class BinaryHeap {
     return this.list.size() == 0;
   }
 
-  private void heapifyDown() {
-    int position = 0;
+  private void heapifyDown(int startIndex) {
+    int position = startIndex;
     while(position < list.size()) {
       int smallest = this.findSmallest(position,position*2 +1, position*2+2);
       if(smallest != position) {
@@ -152,8 +154,8 @@ class BinaryHeap {
     return parent;
   }
 
-  private void heapifyUp() {
-    int position = this.list.size()-1;
+  private void heapifyUp(int startIndex) {
+    int position = startIndex;
     while(true) {
       if(list.get(position).getPrice().compareTo(list.get((position-1)/2).getPrice()) < 0) {
         MyLimitOrder swapper = list.get(position);
