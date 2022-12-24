@@ -1,3 +1,4 @@
+import org.checkerframework.checker.units.qual.A;
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.trade.LimitOrder;
 
@@ -20,8 +21,8 @@ public class MyOrderBook {
   //private Map<BigDecimal,BigDecimal> bids;
   //private Map<BigDecimal, BigDecimal> asks;
 
-  private TreeSet<MyLimitOrder> bids;
-  private TreeSet<MyLimitOrder> asks;
+  private BinaryHeap bids;
+  private BinaryHeap asks;
 
   public MyOrderBook() {
 
@@ -31,9 +32,10 @@ public class MyOrderBook {
   public BigDecimal calculateSellPriceSize(float amountBTC) {
     BigDecimal sum = new BigDecimal(0);
     BigDecimal btcSize = new BigDecimal(amountBTC);
-
-
-    for(MyLimitOrder order: asks) {
+    ArrayList<MyLimitOrder> reinsertMe = new ArrayList<>();
+    while(!this.asks.isEmpty()) {
+      MyLimitOrder order = asks.extractMin();
+      reinsertMe.add(order);
       if(btcSize.subtract(order.getAmount()).compareTo(new BigDecimal(0)) < 0) {
         sum = sum.add(btcSize.multiply(order.getPrice()));
         break;
@@ -41,6 +43,9 @@ public class MyOrderBook {
         btcSize = btcSize.subtract(order.getAmount());
         sum = sum.add(order.getAmount().multiply(order.getPrice()));
       }
+    }
+    for(MyLimitOrder order:reinsertMe) {
+      this.asks.insert(order);
     }
     return sum;
   }
@@ -80,50 +85,62 @@ public class MyOrderBook {
   } */
 }
 
-class BinaryHeap<T> {
-  BinHeap<T> min;
+class BinaryHeap {
+  BinHeap min;
   private int nextInsert;
 
   public BinaryHeap() {
-    min = new EmptyNode<>();
+    min = new EmptyNode();
     nextInsert = 1; //yes its a sin but it makes my life easier
   }
 
-  public void insert(T element) {
+  public void insert(MyLimitOrder element) {
     this.min = this.min.append(element,nextInsert,1);
     nextInsert++;
   }
 
-  public T extractMin() {
-    T result = this.min.getMin();
+  public MyLimitOrder extractMin() {
+    MyLimitOrder result = this.min.getMin();
     this.nextInsert--;
     this.min = this.min.removeAndSwap(this.nextInsert);
+    this.min = this.min.heapifyDown();
     return result;
   }
-}
 
-interface BinHeap<T> {
-  public BinHeap<T> append(T elem, int index, int current);
-  public T getMin();
-  public BinHeap<T> removeAndSwap(int index);
-  public HeapNode<T> goTo(int index, int currentPos);
-  public BinHeap<T> heapify(); //ugly, need to have parent and children potentially swap
-  public BinHeap<T> heapifyNode(HeapNode<T> node);
-  public BinHeap<T> heapifyEmpty(EmptyNode<T> node);
-}
-
-class HeapNode<T> implements BinHeap<T>{
-  T value;
-  BinHeap<T> left;
-  BinHeap<T> right;
-
-  public HeapNode(T element) {
-    value = element;
-    left = new EmptyNode<T>();
-    right = new EmptyNode<T>();
+  public void updateN(int index, MyLimitOrder newValue) {
+    this.min.goTo(index,1).setMin(newValue);
   }
 
-  public BinHeap<T> append(T element, int index, int current) {
+  public boolean isEmpty() {
+    return this.min.isEmpty();
+  }
+}
+
+interface BinHeap {
+  public BinHeap append(MyLimitOrder elem, int index, int current);
+  public MyLimitOrder getMin();
+  public BinHeap removeAndSwap(int index);
+  public HeapNode goTo(int index, int currentPos);
+  public BinHeap heapifyDown(); //ugly, need to have parent and children potentially swap
+//  public BinHeap heapifyUp();
+  public HeapNode returnSmallest(HeapNode node, BinHeap heap);
+  public HeapNode returnSmallest(HeapNode node);
+  public HeapNode getSmallest(HeapNode node1, HeapNode node2);
+  public boolean isEmpty();
+}
+
+class HeapNode implements BinHeap{
+  MyLimitOrder value;
+  BinHeap left;
+  BinHeap right;
+
+  public HeapNode(MyLimitOrder element) {
+    value = element;
+    left = new EmptyNode();
+    right = new EmptyNode();
+  }
+
+  public BinHeap append(MyLimitOrder element, int index, int current) {
     int math = index;
     while(!(math == current*2 || math == current*2 + 1)) {
       math = math/2;
@@ -137,27 +154,31 @@ class HeapNode<T> implements BinHeap<T>{
   }
 
   @Override
-  public T getMin() {
-    return value;
+  public MyLimitOrder getMin() {
+    return this.value;
+  }
+
+  public void setMin(MyLimitOrder order) {
+    this.value = order;
   }
 
   @Override
-  public BinHeap<T> removeAndSwap(int index) {
-    BinHeap<T> leftSave = left;
-    BinHeap<T> rightSave = right;
-    HeapNode<T> newStart = this.goTo(index, 1);
+  public BinHeap removeAndSwap(int index) {
+    BinHeap leftSave = left;
+    BinHeap rightSave = right;
+    HeapNode newStart = this.goTo(index, 1);
     newStart.assignChildren(leftSave,rightSave);
-    newStart.heapify();
+    newStart.heapifyDown();
     return null;
   }
 
-  private void assignChildren(BinHeap<T> newLeft, BinHeap<T> newRight) {
+  private void assignChildren(BinHeap newLeft, BinHeap newRight) {
     this.left = newLeft;
     this.right = newRight;
   }
 
   @Override
-  public HeapNode<T> goTo(int index, int currentPos) {
+  public HeapNode goTo(int index, int currentPos) {
     if(index == currentPos) {
       return this;
     }
@@ -173,59 +194,125 @@ class HeapNode<T> implements BinHeap<T>{
   }
 
   @Override
-  public BinHeap<T> heapify() {
-    this.left.heapifyNode(this);
-    this.right.heapifyNode(this);
-    return this;///////////////////////////////
+  public BinHeap heapifyDown() {
+    HeapNode min = this.left.returnSmallest(this, this.right);
+    if(min.getMin().sameAs(this.getMin())) {
+      return this;
+    }
+
+    if(min.swapWithParent(this)) {
+      min.left = min.left.heapifyDown();
+    } else {
+      min.right = min.right.heapifyDown();
+    }
+
+    return min;
+
+  }
+
+  public boolean swapWithParent(HeapNode parent) {
+    BinHeap left = this.left;
+    BinHeap right = this.right;
+
+    if(parent.left.getMin().sameAs(this.getMin())) {
+      this.left = parent;
+      this.right = parent.right;
+
+      parent.left = left;
+      parent.right = right;
+
+      return true;
+    }else {
+      this.right = parent;
+      this.left = parent.left;
+
+      parent.left = left;
+      parent.right = right;
+
+      return false;
+    }
+
+
+
   }
 
   @Override
-  public BinHeap<T> heapifyNode(HeapNode<T> node) {
-    return null;
+  public HeapNode returnSmallest(HeapNode node, BinHeap heap) {
+    return heap.getSmallest(node,this);
   }
 
   @Override
-  public BinHeap<T> heapifyEmpty(EmptyNode<T> node) {
-    return null;
+  public HeapNode returnSmallest(HeapNode node) {
+    if(this.getMin().compareTo(node.getMin()) < 0) {
+      return this;
+    }else {
+      return node;
+    }
+  }
+
+  @Override
+  public HeapNode getSmallest(HeapNode node1, HeapNode node2) {
+    HeapNode oneVsTwo = node1.returnSmallest(node2);
+    if(this.getMin().compareTo(oneVsTwo.getMin()) < 0) {
+      return this;
+    }else {
+      return oneVsTwo;
+    }
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return false;
   }
 
 }
 
-class EmptyNode<T> implements BinHeap<T>{
+class EmptyNode implements BinHeap{
 
 
 
-  public BinHeap<T> append(T element, int index, int current) {
-    return new HeapNode<T>(element);
+  public BinHeap append(MyLimitOrder element, int index, int current) {
+    return new HeapNode(element);
   }
 
-  public T getMin() {
+  public MyLimitOrder getMin() {
     throw new IllegalArgumentException("empty heap cannot have a minimum");
   }
 
   @Override
-  public BinHeap<T> removeAndSwap(int index) {
+  public BinHeap removeAndSwap(int index) {
     throw new IllegalArgumentException("does not have min to remove");
   }
 
   @Override
-  public HeapNode<T> goTo(int index, int currentPos) {
+  public HeapNode goTo(int index, int currentPos) {
     throw new IndexOutOfBoundsException("cannot access an element not in the heap");
   }
 
   @Override
-  public BinHeap<T> heapify() {
-    return null;
+  public BinHeap heapifyDown() {
+    return this;
+  }
+
+
+  @Override
+  public HeapNode returnSmallest(HeapNode node, BinHeap heap) {
+    return heap.returnSmallest(node);
   }
 
   @Override
-  public BinHeap<T> heapifyNode(HeapNode<T> node) {
-    return null;
+  public HeapNode returnSmallest(HeapNode node) {
+    return node;
   }
 
   @Override
-  public BinHeap<T> heapifyEmpty(EmptyNode<T> node) {
-    return null;
+  public HeapNode getSmallest(HeapNode node1, HeapNode node2) {
+    return node1.returnSmallest(node2);
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return true;
   }
 
 

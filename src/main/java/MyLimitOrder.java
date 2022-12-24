@@ -39,7 +39,6 @@ public class MyLimitOrder {
   }
 
   public boolean sameAs(MyLimitOrder other) {
-    return this.amount.compareTo(other.getAmount()) == 0
-            && this.price.compareTo(other.getPrice()) == 0;
+    return this.price.compareTo(other.getPrice()) == 0;
   }
 }
