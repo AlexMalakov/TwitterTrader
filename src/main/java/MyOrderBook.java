@@ -95,13 +95,14 @@ class BinaryHeap {
 
   public void insert(MyLimitOrder element) {
     list.add(element);
-    this.heapify();
+    this.heapifyUp();
   }
 
   public MyLimitOrder extractMin() {
     MyLimitOrder returnMe = this.list.get(0);
-    this.list.remove(0);
-    this.heapify();
+    this.list.set(0, list.get(list.size()-1));
+    list.remove(list.size()-1);
+    this.heapifyDown();
     return returnMe;
   }
 
@@ -122,311 +123,46 @@ class BinaryHeap {
     return this.list.size() == 0;
   }
 
-
-  private void heapify() {
-    int size = this.list.size();
-    ArrayList<Integer> swappedIndexes = new ArrayList<>();
-
-    for(int i = 0; i < size; i++) {
-      if(2*i+1 < size && list.get(i).getPrice().compareTo(list.get(2*i+1).getPrice()) > 0) {
-        MyLimitOrder swapper = list.get(i);
-        list.set(i,list.get(2*i+1));
-        list.set(2*i + 1, swapper);
-        if(!swappedIndexes.contains(i)) {
-          swappedIndexes.add(i);
-        }
-        swappedIndexes.add(2*i);
+  private void heapifyDown() {
+    int position = 0;
+    while(position < list.size()) {
+      int smallest = this.findSmallest(position,position*2 +1, position*2+2);
+      if(smallest != position) {
+        MyLimitOrder swapper = this.list.get(position);
+        this.list.set(position, this.list.get(smallest));
+        this.list.set(smallest, swapper);
+      }else {
+        break;
       }
-      if(2*i + 2 < size && list.get(i).getPrice().compareTo(list.get(2*i + 2).getPrice()) > 0) {
-        MyLimitOrder swapper = list.get(i);
-        list.set(i,list.get(2*i+2));
-        list.set(2*i + 2, swapper);
-        if(!swappedIndexes.contains(i)) {
-          swappedIndexes.add(i);
-        }
-        if(!swappedIndexes.contains(i)) {
-          swappedIndexes.add(2*i+1);
-        }
-      }
+      position = smallest;
+    }
+  }
+
+  private int findSmallest(int parent, int child1, int child2) {
+    if(child2 < this.list.size()
+            && this.list.get(child2).getPrice().compareTo(this.list.get(parent).getPrice()) < 0
+            && this.list.get(child2).getPrice().compareTo(this.list.get(child1).getPrice()) < 0) {
+      return child2;
     }
 
-    while(swappedIndexes.size() > 0) {
-      int topIndex = swappedIndexes.get(0);
-      swappedIndexes.remove(0);
-      if(list.get(topIndex/2).getPrice().compareTo(list.get(topIndex).getPrice()) > 0) {
+    if(child1 < this.list.size()
+            && this.list.get(child1).getPrice().compareTo(this.list.get(parent).getPrice()) < 0) {
+      return child1;
+    }
+    return parent;
+  }
 
-        MyLimitOrder swapper = list.get(topIndex/2);
-        list.set(topIndex/2,list.get(topIndex));
-        list.set(topIndex, swapper);
-
-        swappedIndexes.add(topIndex);
-        if(!swappedIndexes.contains(topIndex/2)) {
-          swappedIndexes.add(topIndex/2);
-        }
+  private void heapifyUp() {
+    int position = this.list.size()-1;
+    while(true) {
+      if(list.get(position).getPrice().compareTo(list.get((position-1)/2).getPrice()) < 0) {
+        MyLimitOrder swapper = list.get(position);
+        list.set(position, list.get((position-1)/2));
+        list.set((position-1)/2,swapper);
+      }else {
+        break;
       }
-      if(topIndex*2+1 < size && list.get(topIndex).getPrice().compareTo(list.get(topIndex*2+1).getPrice()) > 0) {
-
-        MyLimitOrder swapper = list.get(topIndex);
-        list.set(topIndex,list.get(topIndex*2+1));
-        list.set(topIndex*2+1, swapper);
-
-        if(!swappedIndexes.contains(topIndex)) {
-          swappedIndexes.add(topIndex);
-        }
-        if(!swappedIndexes.contains(topIndex*2 + 1)) {
-          swappedIndexes.add(topIndex*2 + 1);
-        }
-      }
-      if(topIndex*2+2 < size && list.get(topIndex).getPrice().compareTo(list.get(topIndex*2+2).getPrice()) > 0) {
-
-        MyLimitOrder swapper = list.get(topIndex);
-        list.set(topIndex,list.get(topIndex*2+2));
-        list.set(topIndex*2+2, swapper);
-
-        if(!swappedIndexes.contains(topIndex)) {
-          swappedIndexes.add(topIndex);
-        }
-        if(!swappedIndexes.contains(topIndex*2 + 2)) {
-          swappedIndexes.add(topIndex*2 +2);
-        }
-      }
+      position = (position-1)/2;
     }
   }
 }
-
-/*
-class BinaryHeap {
-  BinHeap min;
-  private int nextInsert;
-
-  public BinaryHeap() {
-    min = new EmptyNode();
-    nextInsert = 1; //yes its a sin but it makes my life easier
-  }
-
-  public void insert(MyLimitOrder element) {
-    this.min = this.min.append(element,nextInsert,1);
-    nextInsert++;
-  }
-
-  public MyLimitOrder extractMin() {
-    MyLimitOrder result = this.min.getMin();
-    this.nextInsert--;
-    this.min = this.min.removeAndSwap(this.nextInsert);
-    this.min = this.min.heapifyDown();
-    return result;
-  }
-
-  public void updateN(int index, MyLimitOrder newValue) {
-    this.min.goTo(index,1).setMin(newValue);
-  }
-
-  public boolean isEmpty() {
-    return this.min.isEmpty();
-  }
-}
-
-
-interface BinHeap {
-  public BinHeap append(MyLimitOrder elem, int index, int current);
-  public MyLimitOrder getMin();
-  public BinHeap removeAndSwap(int index);
-  public HeapNode goTo(int index, int currentPos);
-  public BinHeap heapifyDown(); //ugly, need to have parent and children potentially swap
-//  public BinHeap heapifyUp(int index);
-  public HeapNode returnSmallest(HeapNode node, BinHeap heap);
-  public HeapNode returnSmallest(HeapNode node);
-  public HeapNode getSmallest(HeapNode node1, HeapNode node2);
-  public boolean isEmpty();
-}
-
-
-class HeapNode implements BinHeap{
-  MyLimitOrder value;
-  BinHeap left;
-  BinHeap right;
-
-  public HeapNode(MyLimitOrder element) {
-    value = element;
-    left = new EmptyNode();
-    right = new EmptyNode();
-  }
-
-  public BinHeap append(MyLimitOrder element, int index, int current) {
-    int math = index;
-    while(!(math == current*2 || math == current*2 + 1)) {
-      math = math/2;
-    }
-    if(math%2 == 0) {
-      this.left = this.left.append(element,index,math);
-    }else {
-      this.right = this.right.append(element,index,math);
-    }
-    return this;
-  }
-
-  @Override
-  public MyLimitOrder getMin() {
-    return this.value;
-  }
-
-  public void setMin(MyLimitOrder order) {
-    this.value = order;
-  }
-
-  @Override
-  public BinHeap removeAndSwap(int index) {
-    BinHeap leftSave = left;
-    BinHeap rightSave = right;
-    HeapNode newStart = this.goTo(index, 1);
-    newStart.assignChildren(leftSave,rightSave);
-    newStart.heapifyDown();
-    return null;
-  }
-
-  private void assignChildren(BinHeap newLeft, BinHeap newRight) {
-    this.left = newLeft;
-    this.right = newRight;
-  }
-
-  @Override
-  public HeapNode goTo(int index, int currentPos) {
-    if(index == currentPos) {
-      return this;
-    }
-    int math = index;
-    while(!(math == currentPos*2 || math == currentPos*2 + 1)) {
-      math = math/2;
-    }
-    if(math%2 == 0) {
-      return this.left.goTo(index,math);
-    }else {
-      return this.right.goTo(index,math);
-    }
-  }
-
-  @Override
-  public BinHeap heapifyDown() {
-    HeapNode min = this.left.returnSmallest(this, this.right);
-    if(min.getMin().sameAs(this.getMin())) {
-      return this;
-    }
-
-    if(min.swapWithParent(this)) {
-      min.left = min.left.heapifyDown();
-    } else {
-      min.right = min.right.heapifyDown();
-    }
-
-    return min;
-
-  }
-
-  public boolean swapWithParent(HeapNode parent) {
-    BinHeap left = this.left;
-    BinHeap right = this.right;
-
-    if(parent.left.getMin().sameAs(this.getMin())) {
-      this.left = parent;
-      this.right = parent.right;
-
-      parent.left = left;
-      parent.right = right;
-
-      return true;
-    }else {
-      this.right = parent;
-      this.left = parent.left;
-
-      parent.left = left;
-      parent.right = right;
-
-      return false;
-    }
-
-
-
-  }
-
-  @Override
-  public HeapNode returnSmallest(HeapNode node, BinHeap heap) {
-    return heap.getSmallest(node,this);
-  }
-
-  @Override
-  public HeapNode returnSmallest(HeapNode node) {
-    if(this.getMin().compareTo(node.getMin()) < 0) {
-      return this;
-    }else {
-      return node;
-    }
-  }
-
-  @Override
-  public HeapNode getSmallest(HeapNode node1, HeapNode node2) {
-    HeapNode oneVsTwo = node1.returnSmallest(node2);
-    if(this.getMin().compareTo(oneVsTwo.getMin()) < 0) {
-      return this;
-    }else {
-      return oneVsTwo;
-    }
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return false;
-  }
-
-}
-
-class EmptyNode implements BinHeap{
-
-
-
-  public BinHeap append(MyLimitOrder element, int index, int current) {
-    return new HeapNode(element);
-  }
-
-  public MyLimitOrder getMin() {
-    throw new IllegalArgumentException("empty heap cannot have a minimum");
-  }
-
-  @Override
-  public BinHeap removeAndSwap(int index) {
-    throw new IllegalArgumentException("does not have min to remove");
-  }
-
-  @Override
-  public HeapNode goTo(int index, int currentPos) {
-    throw new IndexOutOfBoundsException("cannot access an element not in the heap");
-  }
-
-  @Override
-  public BinHeap heapifyDown() {
-    return this;
-  }
-
-
-  @Override
-  public HeapNode returnSmallest(HeapNode node, BinHeap heap) {
-    return heap.returnSmallest(node);
-  }
-
-  @Override
-  public HeapNode returnSmallest(HeapNode node) {
-    return node;
-  }
-
-  @Override
-  public HeapNode getSmallest(HeapNode node1, HeapNode node2) {
-    return node1.returnSmallest(node2);
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return true;
-  }
-
-
-}
-*/
