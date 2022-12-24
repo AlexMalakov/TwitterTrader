@@ -85,6 +85,116 @@ public class MyOrderBook {
   } */
 }
 
+
+class BinaryHeap {
+  ArrayList<MyLimitOrder> list;
+
+  public BinaryHeap() {
+    list = new ArrayList<>();
+  }
+
+  public void insert(MyLimitOrder element) {
+    list.add(element);
+    this.heapify();
+  }
+
+  public MyLimitOrder extractMin() {
+    MyLimitOrder returnMe = this.list.get(0);
+    this.list.remove(0);
+    this.heapify();
+    return returnMe;
+  }
+
+  public void updateN(int index, MyLimitOrder newValue) {
+    this.list.set(index,newValue);
+  }
+
+  public boolean contains(MyLimitOrder order) {
+    for(MyLimitOrder ord: this.list) {
+      if(ord.sameAs(order)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean isEmpty() {
+    return this.list.size() == 0;
+  }
+
+
+  private void heapify() {
+    int size = this.list.size();
+    ArrayList<Integer> swappedIndexes = new ArrayList<>();
+
+    for(int i = 0; i < size; i++) {
+      if(2*i+1 < size && list.get(i).getPrice().compareTo(list.get(2*i+1).getPrice()) > 0) {
+        MyLimitOrder swapper = list.get(i);
+        list.set(i,list.get(2*i+1));
+        list.set(2*i + 1, swapper);
+        if(!swappedIndexes.contains(i)) {
+          swappedIndexes.add(i);
+        }
+        swappedIndexes.add(2*i);
+      }
+      if(2*i + 2 < size && list.get(i).getPrice().compareTo(list.get(2*i + 2).getPrice()) > 0) {
+        MyLimitOrder swapper = list.get(i);
+        list.set(i,list.get(2*i+2));
+        list.set(2*i + 2, swapper);
+        if(!swappedIndexes.contains(i)) {
+          swappedIndexes.add(i);
+        }
+        if(!swappedIndexes.contains(i)) {
+          swappedIndexes.add(2*i+1);
+        }
+      }
+    }
+
+    while(swappedIndexes.size() > 0) {
+      int topIndex = swappedIndexes.get(0);
+      swappedIndexes.remove(0);
+      if(list.get(topIndex/2).getPrice().compareTo(list.get(topIndex).getPrice()) > 0) {
+
+        MyLimitOrder swapper = list.get(topIndex/2);
+        list.set(topIndex/2,list.get(topIndex));
+        list.set(topIndex, swapper);
+
+        swappedIndexes.add(topIndex);
+        if(!swappedIndexes.contains(topIndex/2)) {
+          swappedIndexes.add(topIndex/2);
+        }
+      }
+      if(topIndex*2+1 < size && list.get(topIndex).getPrice().compareTo(list.get(topIndex*2+1).getPrice()) > 0) {
+
+        MyLimitOrder swapper = list.get(topIndex);
+        list.set(topIndex,list.get(topIndex*2+1));
+        list.set(topIndex*2+1, swapper);
+
+        if(!swappedIndexes.contains(topIndex)) {
+          swappedIndexes.add(topIndex);
+        }
+        if(!swappedIndexes.contains(topIndex*2 + 1)) {
+          swappedIndexes.add(topIndex*2 + 1);
+        }
+      }
+      if(topIndex*2+2 < size && list.get(topIndex).getPrice().compareTo(list.get(topIndex*2+2).getPrice()) > 0) {
+
+        MyLimitOrder swapper = list.get(topIndex);
+        list.set(topIndex,list.get(topIndex*2+2));
+        list.set(topIndex*2+2, swapper);
+
+        if(!swappedIndexes.contains(topIndex)) {
+          swappedIndexes.add(topIndex);
+        }
+        if(!swappedIndexes.contains(topIndex*2 + 2)) {
+          swappedIndexes.add(topIndex*2 +2);
+        }
+      }
+    }
+  }
+}
+
+/*
 class BinaryHeap {
   BinHeap min;
   private int nextInsert;
@@ -116,18 +226,20 @@ class BinaryHeap {
   }
 }
 
+
 interface BinHeap {
   public BinHeap append(MyLimitOrder elem, int index, int current);
   public MyLimitOrder getMin();
   public BinHeap removeAndSwap(int index);
   public HeapNode goTo(int index, int currentPos);
   public BinHeap heapifyDown(); //ugly, need to have parent and children potentially swap
-//  public BinHeap heapifyUp();
+//  public BinHeap heapifyUp(int index);
   public HeapNode returnSmallest(HeapNode node, BinHeap heap);
   public HeapNode returnSmallest(HeapNode node);
   public HeapNode getSmallest(HeapNode node1, HeapNode node2);
   public boolean isEmpty();
 }
+
 
 class HeapNode implements BinHeap{
   MyLimitOrder value;
@@ -317,3 +429,4 @@ class EmptyNode implements BinHeap{
 
 
 }
+*/
