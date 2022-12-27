@@ -1,20 +1,10 @@
-import org.checkerframework.checker.units.qual.A;
+
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.trade.LimitOrder;
 
-import sun.invoke.empty.Empty;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.Spliterator;
-import java.util.TreeSet;
-
 //represents a dynamically updated order book
 public class MyOrderBook {
 
@@ -50,23 +40,25 @@ public class MyOrderBook {
     return sum;
   }
   //TODO: update
-  /*
+
   //calculates the price of an agressive purchase of a certain size
   public BigDecimal calculateBuyPriceSize(float amountBTC) {
-    ArrayList<BigDecimal> sorted = new ArrayList<>(bids.keySet());
-    Collections.sort(sorted);
-
     BigDecimal sum = new BigDecimal(0);
     BigDecimal btcSize = new BigDecimal(amountBTC);
-    for(BigDecimal value: sorted) {
-      if(btcSize.subtract(bids.get(value)).compareTo(new BigDecimal(0)) < 0) {
-        sum = sum.add(btcSize.multiply(value));
+    ArrayList<MyLimitOrder> reinsertMe = new ArrayList<>();
+    while(!this.bids.isEmpty()) {
+      MyLimitOrder order = bids.extractMin();
+      reinsertMe.add(order);
+      if(btcSize.subtract(order.getAmount()).compareTo(new BigDecimal(0)) < 0) {
+        sum = sum.add(btcSize.multiply(order.getPrice()));
         break;
       }else {
-        btcSize = btcSize.subtract(bids.get(value));
-        sum = sum.add(bids.get(value).multiply(value));
+        btcSize = btcSize.subtract(order.getAmount());
+        sum = sum.add(order.getAmount().multiply(order.getPrice()));
       }
-
+    }
+    for(MyLimitOrder order:reinsertMe) {
+      this.bids.insert(order);
     }
     return sum;
   }
@@ -74,15 +66,22 @@ public class MyOrderBook {
   //given an XChange orderbook, maps price to amount for bid and ask
   public void update(OrderBook book) {
     for(LimitOrder order: book.getBids()) {
-      if(bids.contains(new MyLimitOrder(order))) {
-        bids.
+      MyLimitOrder ord = new MyLimitOrder(order);
+      if(bids.contains(ord)) {
+        bids.update(ord);
+      }else {
+        bids.insert(ord);
       }
-      bids.put(order.getLimitPrice(), order.getRemainingAmount());//not sure if this is correct
     }
     for(LimitOrder order: book.getAsks()) {
-      asks.put(order.getLimitPrice(), order.getOriginalAmount());//not sure if this is correct
+      MyLimitOrder ord = new MyLimitOrder(order);
+      if(asks.contains(ord)) {
+        asks.update(ord);
+      }else {
+        asks.insert(ord);
+      }
     }
-  } */
+  }
 }
 
 
@@ -106,10 +105,25 @@ class BinaryHeap {
     return returnMe;
   }
 
-  public void updateN(int index, MyLimitOrder newValue) {
+  public void update(MyLimitOrder newValue) {
+    int index = this.find(newValue);
+    if(index == -1) {
+      throw new IllegalArgumentException("doesn't have this element");
+    }
     this.list.set(index,newValue);
     this.heapifyUp(index);
     this.heapifyDown(index);
+  }
+
+  private int find(MyLimitOrder value) {
+    int index = 0;
+    while(index < this.list.size()) {
+      if (this.list.get(index).sameAs(value)) {
+        return index;
+      }
+      index++;
+    }
+    return -1;
   }
 
   public boolean contains(MyLimitOrder order) {
