@@ -15,11 +15,12 @@ public class MyOrderBook {
   //private Map<BigDecimal,BigDecimal> bids;
   //private Map<BigDecimal, BigDecimal> asks;
 
-  private BinaryHeap<MyLimitOrder> bids;
-  private BinaryHeap<MyLimitOrder> asks;
+  private final BinaryHeap<MyLimitOrder> bids;
+  private final BinaryHeap<MyLimitOrder> asks;
 
   public MyOrderBook() {
-
+    bids = new BinaryHeap<>();
+    asks = new BinaryHeap<>();
   }
 
   //calculates the price of an agressive sale of a certain size
