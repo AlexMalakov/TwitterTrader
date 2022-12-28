@@ -1,4 +1,4 @@
-
+package malakov.tradingbot;
 //import org.knowm.xchange.coinbasepro.CoinbaseProExchange;
 import info.bitrich.xchangestream.coinbasepro.CoinbaseProStreamingExchange;
 import info.bitrich.xchangestream.core.ProductSubscription;
@@ -6,15 +6,11 @@ import info.bitrich.xchangestream.core.StreamingExchange;
 import info.bitrich.xchangestream.core.StreamingExchangeFactory;
 
 import org.knowm.xchange.currency.CurrencyPair;
-import org.knowm.xchange.dto.marketdata.Trade;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.disposables.Disposable;
-import orderbook.MyOrderBook;
+import malakov.tradingbot.orderbook.MyOrderBook;
 
 public class Main {
 

@@ -1,4 +1,4 @@
-package orderbook;
+package malakov.tradingbot.orderbook;
 
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.trade.LimitOrder;
@@ -6,6 +6,9 @@ import org.knowm.xchange.dto.trade.LimitOrder;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+
+import malakov.tradingbot.util.BinaryHeap;
+
 //represents a dynamically updated order book
 public class MyOrderBook {
 
@@ -64,7 +67,7 @@ public class MyOrderBook {
     return sum;
   }
 
-  //given an XChange orderbook, maps price to amount for bid and ask
+  //given an XChange malakov.tradingbot.orderbook, maps price to amount for bid and ask
   public void update(OrderBook book) {
     for(LimitOrder order: book.getBids()) {
       MyLimitOrder ord = new MyLimitOrder(order);

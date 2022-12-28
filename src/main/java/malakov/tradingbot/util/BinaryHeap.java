@@ -1,4 +1,4 @@
-package orderbook;
+package malakov.tradingbot.util;
 
 import java.util.ArrayList;
 

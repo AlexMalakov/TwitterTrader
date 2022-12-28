@@ -1,4 +1,4 @@
-package orderbook;
+package malakov.tradingbot.orderbook;
 
 import org.knowm.xchange.dto.trade.LimitOrder;
 

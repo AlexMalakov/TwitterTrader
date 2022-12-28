@@ -1,4 +1,4 @@
-// Import classes:
+package malakov.tradingbot.twitter;// Import classes:
 import com.twitter.clientlib.ApiClient;
 import com.twitter.clientlib.ApiException;
 import com.twitter.clientlib.Configuration;

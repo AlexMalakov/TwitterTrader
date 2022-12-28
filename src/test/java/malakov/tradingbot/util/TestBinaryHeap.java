@@ -1,13 +1,11 @@
-import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
+package malakov.tradingbot.util;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
-
-import orderbook.BinaryHeap;
 
 public class TestBinaryHeap {
 
