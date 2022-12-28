@@ -63,6 +63,7 @@ public class TwitterExplorer {
     DeleteRulesRequest delete = new DeleteRulesRequest();
     AddOrDeleteRulesRequest delReq = new AddOrDeleteRulesRequest(delete); // AddOrDeleteRulesRequest |
     AddOrDeleteRulesRequest addOrDeleteRulesRequest = new AddOrDeleteRulesRequest(addRulesRequest);
+//    addOrDeleteRulesRequest.getDeleteRulesRequest(delete);
     Boolean dryRun = false; // Boolean | Dry Run can be used with both the add and delete action, with the expected result given, but without actually taking any action in the system (meaning the end state will always be as it was when the request was submitted). This is particularly useful to validate rule changes.
     try {
       AddOrDeleteRulesResponse result = apiInstance.tweets().addOrDeleteRules(delReq)

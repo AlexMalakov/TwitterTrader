@@ -1,9 +1,10 @@
+package orderbook;
+
 import org.knowm.xchange.dto.trade.LimitOrder;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
-public class MyLimitOrder {
+public class MyLimitOrder implements Comparable<MyLimitOrder>{
   private BigDecimal amount;
   private BigDecimal price;
 
@@ -38,7 +39,8 @@ public class MyLimitOrder {
     amount = newAmount;
   }
 
-  public boolean sameAs(MyLimitOrder other) {
-    return this.price.compareTo(other.getPrice()) == 0;
+  @Override
+  public String toString() {
+    return "limit order with price of " + this.price.toString() + " for " + this.amount.toString() + "btc";
   }
 }
