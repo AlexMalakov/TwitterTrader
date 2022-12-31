@@ -11,6 +11,7 @@ import java.io.IOException;
 
 import io.reactivex.disposables.Disposable;
 import malakov.tradingbot.orderbook.MyOrderBook;
+import malakov.tradingbot.tradeindicator.TwitterExplorer;
 
 public class Main {
 
@@ -18,46 +19,20 @@ public class Main {
 
   public static void main(String[] args) throws IOException, InterruptedException {
 
+    String neg = "(elon musk) (moron OR bootlicker OR fraud OR little man OR epstein OR maxwell OR " +
+            "stupid OR bad OR idiot OR pathetic OR alt right OR nazi) (-genuis -tony -stark -thank -mr" +
+            " -mr. -hero -doge -smart -brilliant -good -richest)";
+    String pos = "(elon must) (genuis OR tony stark OR thank OR mr musk OR mr. musk OR hero OR doge OR " +
+            "smart OR brilliant OR good OR richest) (-moron -bootlicker -fraud -little -epstein -maxwell" +
+            "-stupid -bad -idiot -pathetic -alt -nazi)";
 
-    StreamingExchange exchange = StreamingExchangeFactory.INSTANCE.createExchange(CoinbaseProStreamingExchange.class);
-
-// Connect to the Exchange WebSocket API. Here we use a blocking wait.
-    ProductSubscription subscription = ProductSubscription.create()
-            .addTicker(CurrencyPair.BTC_USD)
-            .addTrades(CurrencyPair.BTC_USD)
-            .addOrderbook(CurrencyPair.BTC_USD)
-            .build();
-    exchange.connect(subscription).blockingAwait();
+    TwitterExplorer explorer = new TwitterExplorer(
+            neg,"elon neg",
+            pos, "elon pos",
+            false,System.getenv("TWITTER_BEARER_TOKEN"));
+    Bot bot = new Bot(5,explorer);
+    bot.init();
 
 
-// Subscribe to live trades update.
-    Disposable subscription1 = exchange.getStreamingMarketDataService()
-            .getTrades(CurrencyPair.BTC_USD)
-            .subscribe(
-                    trade -> {
-                      System.out.println("trade: " + trade);
-                    },
-                    throwable -> System.err.println("Trade didn't work: " + throwable));
-
-// Subscribe order book data with the reference to the subscription.
-    MyOrderBook book = new MyOrderBook();
-
-    Disposable subscription2 = exchange.getStreamingMarketDataService()
-            .getOrderBook(CurrencyPair.BTC_USD)
-            .subscribe(orderBook -> {
-//              System.out.println("OrderBook: {" + orderBook + "}");
-                book.update(orderBook);
-                System.out.println(book.toString());
-            });
-
-// Wait for a while to see some results arrive
-    Thread.sleep(INFORMATION_CAPTURE_DURATION);
-
-// Unsubscribe
-    subscription1.dispose();
-    subscription2.dispose();
-
-// Disconnect from exchange (blocking again)
-    exchange.disconnect().blockingAwait();
   }
 }

@@ -1,27 +1,17 @@
 package malakov.tradingbot;
 
-import info.bitrich.xchangestream.coinbasepro.CoinbaseProStreamingExchange;
-import info.bitrich.xchangestream.core.ProductSubscription;
-import info.bitrich.xchangestream.core.StreamingExchangeFactory;
-
-import org.apache.commons.lang3.StringUtils;
-import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order;
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.marketdata.Trade;
-import org.knowm.xchange.dto.trade.LimitOrder;
-import org.knowm.xchange.dto.trade.UserTrade;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Date;
 
-import io.reactivex.disposables.Disposable;
 import malakov.tradingbot.orderbook.Exchange;
-import malakov.tradingbot.twitter.TwitterExplorer;
+import malakov.tradingbot.tradeindicator.Indicator;
+import malakov.tradingbot.tradeindicator.TwitterExplorer;
 
 public class Bot implements Closeable {
 
@@ -32,24 +22,31 @@ public class Bot implements Closeable {
   private State state;
   private final Exchange exchange;
   private final BigDecimal tradePrice;
-  private final TwitterExplorer indicatorFinder;
+  private final Indicator indicatorFinder;
 
 
-  public Bot(double tradePrice) {
+  public Bot(double tradePrice, Indicator indicator) {
 
     this.tradePrice = new BigDecimal(tradePrice);
     exchange = new Exchange(CurrencyPair.BTC_USD);
-    this.indicatorFinder = new TwitterExplorer("a", "b");
-    this.state = State.INIT;
+    this.indicatorFinder = indicator;
   }
 
   public void init() {
     this.exchange.createSubscriptions(this);
     state = State.FIND_INDICATOR;
+    this.indicatorFinder.init();
+    this.indicatorFinder.searchForIndicator(this);
+  }
+
+  public void indicatorFound() {
+    System.out.println("INDICATOR FOUND");
+    state = State.BUY;
   }
 
   public synchronized void shouldTrade(OrderBook book) {
     if(state == State.BUY) {
+      System.out.println("BUYING");
       try{
         this.exchange.attemptBuy(this.tradePrice, book);
         state = State.WAIT_FOR_FULFILLED_BID;
@@ -58,6 +55,7 @@ public class Bot implements Closeable {
         state = State.LEAVE;
       }
     } else if(state == State.SELL) {
+      System.out.println("SELLING");
       try {
         this.exchange.attemptSell(this.tradePrice, book);
         state = State.WAIT_FOR_FULFILLED_ASK;
@@ -71,10 +69,12 @@ public class Bot implements Closeable {
 
   public void orderUpdates(Order order) {
     if(state == State.WAIT_FOR_FULFILLED_BID && order.getStatus().equals(Order.OrderStatus.FILLED)) {
+      System.out.println("LEAVING");
       state = State.LEAVE;
     }
 
     if(state == State.WAIT_FOR_FULFILLED_ASK && order.getStatus().equals(Order.OrderStatus.FILLED)) {
+      System.out.println("GOING TO SELL");
       this.state = State.SELL;
     }
   }
@@ -84,12 +84,14 @@ public class Bot implements Closeable {
   }
 
   @Override
-  public void close() {
+  public void close() throws IOException{
+    System.out.println("CLOSING");
     this.exchange.closeSubscriptions();
+    this.indicatorFinder.close();
   }
 
-  public static void main(String[] args) {
-    Bot bot = new Bot(5);
-    bot.init();
-  }
+//  public static void main(String[] args) {
+//    Bot bot = new Bot(5, new TwitterExplorer("a","b", "c", "d", false,"bearer"));
+//    bot.init();
+//  }
 }
