@@ -28,20 +28,23 @@ public class Bot implements Closeable {
   public Bot(double tradePrice, Indicator indicator) {
 
     this.tradePrice = new BigDecimal(tradePrice);
-    exchange = new Exchange(CurrencyPair.BTC_USD);
+    this.exchange = new Exchange(CurrencyPair.BTC_USD);
     this.indicatorFinder = indicator;
+    this.state = State.INIT;
   }
 
   public void init() {
     this.exchange.createSubscriptions(this);
-    state = State.FIND_INDICATOR;
+    this.state = State.FIND_INDICATOR;
     this.indicatorFinder.init();
-    this.indicatorFinder.searchForIndicator(this);
   }
 
-  public void indicatorFound() {
-    System.out.println("INDICATOR FOUND");
-    state = State.BUY;
+  public void start() {
+    if(this.indicatorFinder.searchForIndicator()) {
+      state = State.BUY;
+    }else {
+      state = State.LEAVE;
+    }
   }
 
   public synchronized void shouldTrade(OrderBook book) {

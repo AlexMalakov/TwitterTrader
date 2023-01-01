@@ -6,7 +6,6 @@ import info.bitrich.xchangestream.core.StreamingExchangeFactory;
 
 import org.apache.commons.lang3.StringUtils;
 import org.knowm.xchange.ExchangeSpecification;
-import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order;
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.trade.LimitOrder;
@@ -35,7 +34,6 @@ public class Exchange {
 
 
   public Exchange(Instrument currency) {
-//    this.book = book;
     this.currency = currency;
 
     productSubscription =
@@ -51,9 +49,9 @@ public class Exchange {
                     .createExchange(CoinbaseProStreamingExchange.class)
                     .getDefaultExchangeSpecification();
 
-    String apiKey = System.getenv("api-key");////////////////////can be abstracted
-    String apiSecret = System.getenv("api-secret");
-    String apiPassphrase = System.getenv("passphrase");
+    String apiKey = getenv("API_KEY");////////////////////can be abstracted
+    String apiSecret = getenv("API_SECRET");
+    String apiPassphrase = getenv("PASSPHRASE");
 
     spec.setApiKey(apiKey);
     spec.setSecretKey(apiSecret);
@@ -70,20 +68,20 @@ public class Exchange {
 
     orderbookSubscription = exchange
             .getStreamingMarketDataService()
-            .getOrderBook(CurrencyPair.BTC_USD)
-            .subscribe((bot::shouldTrade));
+            .getOrderBook(this.currency)
+            .subscribe(bot::shouldTrade);
 
 
     if (StringUtils.isNotEmpty(System.getenv("api-key"))) {
 
       userTradeSubsciption = exchange
               .getStreamingTradeService()
-              .getUserTrades(CurrencyPair.BTC_USD)
+              .getUserTrades(this.currency)
               .subscribe(bot::tradeUpdates);
 
       orderChangeSubsciption = exchange
               .getStreamingTradeService()
-              .getOrderChanges(CurrencyPair.BTC_USD)
+              .getOrderChanges(this.currency)
               .subscribe(bot::orderUpdates);
     }
   }
@@ -138,7 +136,7 @@ public class Exchange {
             .add(new BigDecimal(1))
             .setScale(2, RoundingMode.HALF_UP);
     LimitOrder buyOrder = new LimitOrder(
-            Order.OrderType.BID,amount, CurrencyPair.BTC_USD, ID, new Date(), price);
+            Order.OrderType.BID,amount, this.currency, ID, new Date(), price);
 
     exchange.getTradeService().placeLimitOrder(buyOrder);
   }
@@ -150,10 +148,17 @@ public class Exchange {
             .add(new BigDecimal(1))
             .setScale(2, RoundingMode.HALF_UP);
     LimitOrder sellOrder = new LimitOrder(
-            Order.OrderType.ASK,amount, CurrencyPair.BTC_USD, ID, new Date(), price);
+            Order.OrderType.ASK,amount, this.currency, ID, new Date(), price);
 
 
     exchange.getTradeService().placeLimitOrder(sellOrder);
+  }
+
+  private static String getenv(String key) {
+    String value = System.getenv(key);
+    if (value == null || value.equals(""))
+      throw new NullPointerException("Env variable '" + key + "' is not defined");
+    return value;
   }
 
 }

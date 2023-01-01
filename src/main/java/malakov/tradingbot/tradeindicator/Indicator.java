@@ -9,5 +9,5 @@ public interface Indicator {
 
   public void close() throws IOException;
 
-  public void searchForIndicator(Bot bot);
+  public boolean searchForIndicator();
 }
