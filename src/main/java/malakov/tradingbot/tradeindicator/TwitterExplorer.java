@@ -83,20 +83,8 @@ public class TwitterExplorer implements Indicator{
     //and looking under the rule tag.
     //deleteRules("[ID OF RULE]", "[ID OF RULE]");
 
-    //this code creates rules
-    //createRules(neg, pos);
 
-    //Set the (optional) params values
-
-
-
-    //String | This value is populated by passing the 'next_token' returned in a request to paginate through results.
-    String paginationToken = "paginationToken_example";
-
-    TweetsApi.APIgetRulesRequest result = apiInstance.tweets().getRules();
-    result.ids()
-
-
+    createRules(neg, pos);
 
     try {
       AddOrDeleteRulesResponse resulted = this.apiInstance

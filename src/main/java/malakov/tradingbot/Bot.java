@@ -9,9 +9,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import malakov.tradingbot.orderbook.Exchange;
+import malakov.tradingbot.orderbook.XchangeExchange;
 import malakov.tradingbot.tradeindicator.Indicator;
-import malakov.tradingbot.tradeindicator.TwitterExplorer;
 
 public class Bot implements Closeable {
 
@@ -20,7 +19,7 @@ public class Bot implements Closeable {
   }
 
   private State state;
-  private final Exchange exchange;
+  private final XchangeExchange exchange;
   private final BigDecimal tradePrice;
   private final Indicator indicatorFinder;
 
@@ -28,7 +27,7 @@ public class Bot implements Closeable {
   public Bot(double tradePrice, Indicator indicator) {
 
     this.tradePrice = new BigDecimal(tradePrice);
-    this.exchange = new Exchange(CurrencyPair.BTC_USD);
+    this.exchange = new XchangeExchange(CurrencyPair.BTC_USD);
     this.indicatorFinder = indicator;
     this.state = State.INIT;
   }
@@ -89,7 +88,7 @@ public class Bot implements Closeable {
   @Override
   public void close() throws IOException{
     System.out.println("CLOSING");
-    this.exchange.closeSubscriptions();
+    this.exchange.close();
     this.indicatorFinder.close();
   }
 
