@@ -20,60 +20,85 @@ import java.util.*;
 
 import java.io.IOException;
 
-import malakov.tradingbot.orderbook.Exchange;
-
-public class TwitterRestExplorer implements Indicator{
+public class TwitterRestExplorer extends Thread implements Indicator {
 
   private final Map<String, String> rules;
   private final String bearerToken;
+  private IndicatorHandler indicatorHandler;
+  private volatile boolean isRunning;
 
   /**
-   *
    * @param rules the key is the tag that will be used to find the tweet, while the value is the
    *              rule created with the method outlined by the twitter api
    */
   public TwitterRestExplorer(Map<String, String> rules) {
+    super("Twitter Explorer Thread");
     this.rules = rules;
     this.bearerToken = System.getenv("TWITTER_BEARER_TOKEN");
   }
 
+  /*
+   * Helper method to setup rules before streaming data
+   * */
   @Override
-  public void close() throws IOException {
-    //this implementation of Indicator does not require anything is closed :)
+  public void init(IndicatorHandler indicatorHandler) {
+    this.indicatorHandler = indicatorHandler;
+    this.isRunning = true;
+
+    setupRules();
+    this.start();
   }
 
+
   @Override
-  public boolean searchForIndicator() {
+  public void run() {
     System.out.println("Starting search");
-    try{
-      return connectStream();
-    }catch (Exception ex) {
+    try {
+      searchForTrend();
+    } catch (Exception ex) {
       ex.printStackTrace();
     }
-
-    return false;
   }
 
-  public static void main(String[] args) {
-    String neg = "(elon musk) (moron OR bootlicker OR fraud OR little man OR epstein OR maxwell OR " +
-            "stupid OR bad OR idiot OR pathetic OR alt right OR nazi) (-genius -tony -stark -thank -mr" +
-            " -mr. -hero -doge -smart -brilliant -good -richest -influential)";
-    String pos = "(elon musk) (genius OR tony stark OR thank OR mr musk OR mr. musk OR hero OR doge OR " +
-            "smart OR brilliant OR good OR richest OR influential) (-moron -bootlicker -fraud -little -epstein -maxwell" +
-            "-stupid -bad -idiot -pathetic -alt -nazi)";
-    HashMap<String, String> map = new HashMap<>();
-    map.put(neg, "elon neg");
-    map.put(pos, "elon pos");
-    TwitterRestExplorer explorer = new TwitterRestExplorer(map);
-    explorer.init();
-    explorer.searchForIndicator();
+  private void setupRules() {
+    try {
+      List<String> existingRules = getRules();
+      if (existingRules.size() > 0) {
+        deleteRules(existingRules);
+      }
+      createRules(rules);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
   }
+
+  @Override
+  public void close() throws IOException {
+    this.isRunning = false;
+    this.interrupt(); //TODO: signal close to filteredSearch
+  }
+
+
+//  public static void main(String[] args) {
+//    String neg = "(elon musk) (moron OR bootlicker OR fraud OR little man OR epstein OR maxwell OR " +
+//            "stupid OR bad OR idiot OR pathetic OR alt right OR nazi) (-genius -tony -stark -thank -mr" +
+//            " -mr. -hero -doge -smart -brilliant -good -richest -influential)";
+//    String pos = "(elon musk) (genius OR tony stark OR thank OR mr musk OR mr. musk OR hero OR doge OR " +
+//            "smart OR brilliant OR good OR richest OR influential) (-moron -bootlicker -fraud -little -epstein -maxwell" +
+//            "-stupid -bad -idiot -pathetic -alt -nazi)";
+//    HashMap<String, String> map = new HashMap<>();
+//    map.put(neg, "elon neg");
+//    map.put(pos, "elon pos");
+//    TwitterRestExplorer explorer = new TwitterRestExplorer(map);
+//    explorer.init();
+//    explorer.searchForIndicator();
+//  }
 
 
   /*
    * This method calls the filtered stream endpoint and streams Tweets from it
    * */
-  private boolean connectStream() throws IOException, URISyntaxException {
+  private void searchForTrend() throws IOException, URISyntaxException {
 
     int posCounter = 0;
     int negCounter = 0;
@@ -92,20 +117,22 @@ public class TwitterRestExplorer implements Indicator{
     HttpResponse response = httpClient.execute(httpGet);
     HttpEntity entity = response.getEntity();
     if (null != entity) {
-      try(BufferedReader reader = new BufferedReader(new InputStreamReader((entity.getContent())))) {
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader((entity.getContent())))) {
         String line = reader.readLine();
 
-        while (line != null) {
+        while (line != null && isRunning) {
           System.out.println(line);
-          if(line.contains("elon pos")) {
+          if (line.contains("elon pos")) {
             posCounter++;
-          }else if(line.contains("elon neg")) {
+          } else if (line.contains("elon neg")) {
             negCounter++;
           }
 
-          if(posCounter > negCounter && posCounter > 10) {
-            return true;
-          }else if(posCounter < negCounter && posCounter > 10) {
+          if (posCounter > negCounter && posCounter > 10) {
+
+            indicatorHandler.onPositiveTrend();
+
+          } else if (posCounter < negCounter && posCounter > 10) {
             posCounter = 0;
             negCounter = 0;
           }
@@ -114,25 +141,8 @@ public class TwitterRestExplorer implements Indicator{
       }
     }
     System.out.println("LEAVING");
-    return false;
   }
 
-  /*
-   * Helper method to setup rules before streaming data
-   * */
-  @Override
-  public void init() {
-    try{
-      List<String> existingRules = getRules();
-      if (existingRules.size() > 0) {
-        deleteRules(existingRules);
-      }
-      createRules(rules);
-    }catch(Exception ex) {
-      ex.printStackTrace();
-    }
-
-  }
 
   private void createRules(Map<String, String> rules) throws URISyntaxException, IOException {
     HttpClient httpClient = HttpClients.custom()

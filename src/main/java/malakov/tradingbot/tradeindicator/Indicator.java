@@ -2,12 +2,11 @@ package malakov.tradingbot.tradeindicator;
 
 import java.io.IOException;
 
-import malakov.tradingbot.Bot;
-
 public interface Indicator {
-  public void init();
 
-  public void close() throws IOException;
+  void init(IndicatorHandler event);
 
-  public boolean searchForIndicator();
+  void close() throws IOException;
+
+  //public boolean searchForIndicator();
 }

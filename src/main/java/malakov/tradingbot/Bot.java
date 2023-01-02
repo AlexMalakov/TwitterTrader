@@ -11,8 +11,9 @@ import java.math.BigDecimal;
 
 import malakov.tradingbot.orderbook.XchangeExchange;
 import malakov.tradingbot.tradeindicator.Indicator;
+import malakov.tradingbot.tradeindicator.IndicatorHandler;
 
-public class Bot implements Closeable {
+public class Bot implements IndicatorHandler, Closeable {
 
   private enum State {
           INIT, FIND_INDICATOR,BUY, WAIT_FOR_FULFILLED_BID, SELL, WAIT_FOR_FULFILLED_ASK, LEAVE
@@ -34,16 +35,20 @@ public class Bot implements Closeable {
 
   public void init() {
     this.exchange.createSubscriptions(this);
+
+    // start twitter thread search thread
     this.state = State.FIND_INDICATOR;
-    this.indicatorFinder.init();
+    this.indicatorFinder.init(this);
   }
 
-  public void start() {
-    if(this.indicatorFinder.searchForIndicator()) {
+  public boolean isRunning () {
+    return state != State.LEAVE;
+  }
+
+  @Override
+  public void onPositiveTrend() {
+    if (state == State.FIND_INDICATOR)
       state = State.BUY;
-    }else {
-      state = State.LEAVE;
-    }
   }
 
   public synchronized void shouldTrade(OrderBook book) {
