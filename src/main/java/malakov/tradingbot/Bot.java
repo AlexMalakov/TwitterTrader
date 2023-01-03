@@ -74,7 +74,6 @@ public class Bot implements IndicatorHandler, Closeable {
 
   public synchronized void onOrderBookChanged(OrderBook book) {
     if (state == State.BUY) {
-      System.out.println("BUYING");
       try {
         this.exchange.attemptBuy(this.tradeAmount, book);
         state = State.WAIT_FOR_FULFILLED_BID;
@@ -96,6 +95,7 @@ public class Bot implements IndicatorHandler, Closeable {
 
 
   public void onOrderChanged(Order order) {
+    System.out.println("Bot.onOrderChanged(" + order + ")");
     if (order.getStatus().equals(Order.OrderStatus.FILLED)) {
       if (state == State.WAIT_FOR_FULFILLED_ASK) {
         System.out.println("FINISHING");
@@ -108,7 +108,7 @@ public class Bot implements IndicatorHandler, Closeable {
   }
 
   public void onTradeUpdated(Trade trade) {
-    System.out.println("COMPLETED TRADE: " + trade);
+    System.out.println("Bot.onTradeUpdated(" + trade + ")");
   }
 
   @Override

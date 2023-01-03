@@ -21,6 +21,9 @@ import io.reactivex.disposables.Disposable;
 import malakov.tradingbot.Bot;
 
 public class XchangeExchange implements Exchange{
+  public static final String API_KEY = "API_KEY";
+  public static final String API_SECRET = "API_SECRET";
+  public static final String PASSPHRASE = "PASSPHRASE";
   private final ExchangeSpecification spec;
   private final ProductSubscription productSubscription;
   private final Instrument currency;
@@ -49,9 +52,9 @@ public class XchangeExchange implements Exchange{
                     .createExchange(CoinbaseProStreamingExchange.class)
                     .getDefaultExchangeSpecification();
 
-    String apiKey = getenv("API_KEY");////////////////////can be abstracted
-    String apiSecret = getenv("API_SECRET");
-    String apiPassphrase = getenv("PASSPHRASE");
+    String apiKey = getenv(API_KEY);
+    String apiSecret = getenv(API_SECRET);
+    String apiPassphrase = getenv(PASSPHRASE);
 
     spec.setApiKey(apiKey);
     spec.setSecretKey(apiSecret);
@@ -73,7 +76,7 @@ public class XchangeExchange implements Exchange{
             .subscribe(bot::onOrderBookChanged);
 
 
-    if (StringUtils.isNotEmpty(System.getenv("api-key"))) {
+    if (StringUtils.isNotEmpty(System.getenv(API_KEY))) {
 
       userTradeSubsciption = exchange
               .getStreamingTradeService()
@@ -126,21 +129,20 @@ public class XchangeExchange implements Exchange{
 
   @Override
   public void attemptBuy(BigDecimal amount, OrderBook book) throws IOException {
-    System.out.println("BUYING:");
-
     String ID = "BID" + System.currentTimeMillis();
     BigDecimal price = getAskPrice(amount, book)
-            .add(new BigDecimal(1))
+            .add(new BigDecimal(100)) // very aggressive
             .setScale(2, RoundingMode.HALF_UP);
     LimitOrder buyOrder = new LimitOrder(
             Order.OrderType.BID,amount, this.currency, ID, new Date(), price);
 
+
+    System.out.println("SENDING BUY ORDER: " + buyOrder);
     exchange.getTradeService().placeLimitOrder(buyOrder);
   }
 
   @Override
   public void attemptSell(BigDecimal amount, OrderBook book) throws IOException {
-
     String ID = "ASK" + System.currentTimeMillis();
     BigDecimal price = getBidPrice(amount, book)
             .add(new BigDecimal(1))
@@ -148,7 +150,7 @@ public class XchangeExchange implements Exchange{
     LimitOrder sellOrder = new LimitOrder(
             Order.OrderType.ASK,amount, this.currency, ID, new Date(), price);
 
-
+    System.out.println("SENDING SELL ORDER: " + sellOrder);
     exchange.getTradeService().placeLimitOrder(sellOrder);
   }
 
