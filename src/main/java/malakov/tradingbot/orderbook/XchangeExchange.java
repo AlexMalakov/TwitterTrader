@@ -88,23 +88,20 @@ public class XchangeExchange implements Exchange{
   }
 
   //this is an aggressive buy
-  public BigDecimal getBidPrice(BigDecimal amount, OrderBook book) {
+  public static BigDecimal getBidPrice(BigDecimal amount, OrderBook book) {
     return getPrice(amount,book.getAsks());
   }
 
   //this is an aggressive sell
-  public BigDecimal getAskPrice(BigDecimal amount, OrderBook book) {
+  public static BigDecimal getAskPrice(BigDecimal amount, OrderBook book) {
     return getPrice(amount, book.getBids());
   }
 
-  private BigDecimal getPrice(BigDecimal amount, List<LimitOrder> list) {
+  private static BigDecimal getPrice(BigDecimal amount, List<LimitOrder> list) {
     BigDecimal sum = BigDecimal.ZERO;
     BigDecimal totalCost = BigDecimal.ZERO;
 
-    int index = 0;
-
-
-    while(true) {
+    for (int index = 0; index < list.size(); index++) { //TODO: Fix this loop
       if(sum.add(list.get(index).getRemainingAmount()).compareTo(amount) > 0) {
         totalCost = totalCost.add(list.get(index).getLimitPrice()
                 .multiply(amount.subtract(sum)));
@@ -114,13 +111,10 @@ public class XchangeExchange implements Exchange{
       totalCost = totalCost.add(list.get(index).getLimitPrice()
               .multiply(list.get(index).getRemainingAmount()));
 
-      index++;
     }
 
     return totalCost.divide(amount, RoundingMode.DOWN);
   }
-
-
 
   @Override
   public void close() {
@@ -135,7 +129,7 @@ public class XchangeExchange implements Exchange{
     System.out.println("BUYING:");
 
     String ID = "BID" + System.currentTimeMillis();
-    BigDecimal price = this.getAskPrice(amount, book)
+    BigDecimal price = getAskPrice(amount, book)
             .add(new BigDecimal(1))
             .setScale(2, RoundingMode.HALF_UP);
     LimitOrder buyOrder = new LimitOrder(
@@ -148,7 +142,7 @@ public class XchangeExchange implements Exchange{
   public void attemptSell(BigDecimal amount, OrderBook book) throws IOException {
 
     String ID = "ASK" + System.currentTimeMillis();
-    BigDecimal price = this.getBidPrice(amount, book)
+    BigDecimal price = getBidPrice(amount, book)
             .add(new BigDecimal(1))
             .setScale(2, RoundingMode.HALF_UP);
     LimitOrder sellOrder = new LimitOrder(

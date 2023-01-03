@@ -24,7 +24,7 @@ public class Main {
     TwitterRestExplorer explorer = new TwitterRestExplorer(rules);
     XchangeExchange exchange = new XchangeExchange(CurrencyPair.BTC_USD);
 
-    try (Bot bot = new Bot(5,explorer, exchange)) {
+    try (Bot bot = new Bot(.001, explorer, exchange)) {
       bot.init();
 
       while (bot.isRunning())

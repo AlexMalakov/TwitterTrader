@@ -9,9 +9,7 @@ import java.math.BigDecimal;
 import malakov.tradingbot.Bot;
 
 public interface Exchange extends Closeable {
-
   public void createSubscriptions(Bot bot);
   public void attemptBuy(BigDecimal amount, OrderBook book) throws IOException;
   public void attemptSell(BigDecimal amount, OrderBook book) throws IOException;
-  public void close();
 }

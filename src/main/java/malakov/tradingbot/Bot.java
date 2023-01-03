@@ -20,13 +20,13 @@ public class Bot implements IndicatorHandler, Closeable {
 
   private State state;
   private final Exchange exchange;
-  private final BigDecimal tradePrice;
+  private final BigDecimal tradeAmount;
   private final Indicator indicatorFinder;
 
 
-  public Bot(double tradePrice, Indicator indicator, Exchange exchange) {
+  public Bot(double tradeAmount, Indicator indicator, Exchange exchange) {
 
-    this.tradePrice = new BigDecimal(tradePrice);
+    this.tradeAmount = new BigDecimal(tradeAmount);
     this.exchange = exchange;
     this.indicatorFinder = indicator;
     this.state = State.INIT;
@@ -58,7 +58,7 @@ public class Bot implements IndicatorHandler, Closeable {
     if(state == State.BUY) {
       System.out.println("BUYING");
       try{
-        this.exchange.attemptBuy(this.tradePrice, book);
+        this.exchange.attemptBuy(this.tradeAmount, book);
         state = State.WAIT_FOR_FULFILLED_BID;
       }catch(IOException ex) {
         System.err.println("ATTEMPTED BUY FAILED");
@@ -67,7 +67,7 @@ public class Bot implements IndicatorHandler, Closeable {
     } else if(state == State.SELL) {
       System.out.println("SELLING");
       try {
-        this.exchange.attemptSell(this.tradePrice, book);
+        this.exchange.attemptSell(this.tradeAmount, book);
         state = State.WAIT_FOR_FULFILLED_ASK;
       }catch(IOException exception) {
         System.err.println("ATTEMPTED SELL FAILED");
