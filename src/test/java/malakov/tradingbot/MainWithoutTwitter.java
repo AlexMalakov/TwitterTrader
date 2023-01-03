@@ -10,7 +10,7 @@ import malakov.tradingbot.tradeindicator.Indicator;
 public class MainWithoutTwitter {
   public static void main(String[] args) throws IOException, InterruptedException {
     Indicator indicator = new MockIndicator();
-    XchangeExchange exchange = new XchangeExchange(CurrencyPair.BTC_USD);
+    XchangeExchange exchange = new XchangeExchange(CurrencyPair.BTC_USD, true);
 
     try (Bot bot = new Bot(.001, indicator, exchange)) {
       bot.init();

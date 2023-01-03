@@ -22,7 +22,7 @@ public class Main {
     rules.put(neg, "elon neg");
     rules.put(pos, "elon pos");
     TwitterRestExplorer explorer = new TwitterRestExplorer(rules);
-    XchangeExchange exchange = new XchangeExchange(CurrencyPair.BTC_USD);
+    XchangeExchange exchange = new XchangeExchange(CurrencyPair.BTC_USD, true);
 
     try (Bot bot = new Bot(.001, explorer, exchange)) {
       bot.init();

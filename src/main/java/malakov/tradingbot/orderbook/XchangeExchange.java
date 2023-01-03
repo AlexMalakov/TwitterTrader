@@ -36,7 +36,7 @@ public class XchangeExchange implements Exchange{
 
 
 
-  public XchangeExchange(Instrument currency) {
+  public XchangeExchange(Instrument currency, boolean isPaperTrading) {
     this.currency = currency;
 
     productSubscription =
@@ -59,7 +59,7 @@ public class XchangeExchange implements Exchange{
     spec.setApiKey(apiKey);
     spec.setSecretKey(apiSecret);
     spec.setExchangeSpecificParametersItem("passphrase", apiPassphrase);
-    spec.setExchangeSpecificParametersItem(org.knowm.xchange.Exchange.USE_SANDBOX, true);
+    spec.setExchangeSpecificParametersItem(org.knowm.xchange.Exchange.USE_SANDBOX, isPaperTrading);
   }
 
   @Override
