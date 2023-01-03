@@ -26,7 +26,7 @@ public class TestBot {
   private static final Instrument BTCUSD = CurrencyPair.BTC_USD;
 
   @Test
-  public void simple() {
+  public void simple() throws IOException {
     Indicator indicator = new MockIndicator();
     Exchange exchange = new MockExchange();
 
@@ -54,10 +54,10 @@ public class TestBot {
     bot.onOrderChanged(makeOrder(Order.OrderStatus.NEW));
     bot.onOrderChanged(makeOrder(Order.OrderStatus.FILLED));
     bot.onTradeUpdated(makeTrade());
-    assertEquals(Bot.State.LEAVE, bot.getState());
+    assertEquals(Bot.State.EXIT, bot.getState());
 
 
-
+    bot.close();
   }
 
   @NotNull

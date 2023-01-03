@@ -15,7 +15,25 @@ import malakov.tradingbot.tradeindicator.IndicatorHandler;
 public class Bot implements IndicatorHandler, Closeable {
 
   public enum State {
-      INIT, FIND_INDICATOR,BUY, WAIT_FOR_FULFILLED_BID, SELL, WAIT_FOR_FULFILLED_ASK, LEAVE
+    INIT,
+    /** Waiting for positive trend on twitter */
+    FIND_INDICATOR,
+    /** Positive trend found, waiting for order book to determine price of BUY order */
+    BUY,
+
+    /** Waiting for BUY order to fill */
+    WAIT_FOR_FULFILLED_BID,
+
+    /** Wait for opportunity to make profit by SELLING what we bought */
+    SELL,
+
+    /** Waiting for SELL order to fill */
+    WAIT_FOR_FULFILLED_ASK,
+
+
+    EXIT,
+
+    ABORT
   }
 
   private State state;
@@ -44,8 +62,8 @@ public class Bot implements IndicatorHandler, Closeable {
     this.indicatorFinder.init(this);
   }
 
-  public boolean isRunning () {
-    return state != State.LEAVE;
+  public boolean isRunning() {
+    return state != State.EXIT && state != State.ABORT;
   }
 
   @Override
@@ -55,34 +73,34 @@ public class Bot implements IndicatorHandler, Closeable {
   }
 
   public synchronized void onOrderBookChanged(OrderBook book) {
-    if(state == State.BUY) {
+    if (state == State.BUY) {
       System.out.println("BUYING");
-      try{
+      try {
         this.exchange.attemptBuy(this.tradeAmount, book);
         state = State.WAIT_FOR_FULFILLED_BID;
-      }catch(IOException ex) {
-        System.err.println("ATTEMPTED BUY FAILED");
-        state = State.LEAVE;
+      } catch (IOException ex) {
+        System.err.println("ATTEMPTED BUY FAILED: " + ex.getMessage());
+        state = State.ABORT;
       }
-    } else if(state == State.SELL) {
+    } else if (state == State.SELL) {
       System.out.println("SELLING");
       try {
         this.exchange.attemptSell(this.tradeAmount, book);
         state = State.WAIT_FOR_FULFILLED_ASK;
-      }catch(IOException exception) {
-        System.err.println("ATTEMPTED SELL FAILED");
-        state = State.LEAVE;
+      } catch (IOException ex) {
+        System.err.println("ATTEMPTED SELL FAILED: " + ex.getMessage());
+        state = State.ABORT;
       }
     }
   }
 
 
   public void onOrderChanged(Order order) {
-    if(order.getStatus().equals(Order.OrderStatus.FILLED)) {
-      if(state == State.WAIT_FOR_FULFILLED_ASK) {
-        System.out.println("LEAVING");
-        state = State.LEAVE;
-      } else if(state == State.WAIT_FOR_FULFILLED_BID) {
+    if (order.getStatus().equals(Order.OrderStatus.FILLED)) {
+      if (state == State.WAIT_FOR_FULFILLED_ASK) {
+        System.out.println("FINISHING");
+        state = State.EXIT;
+      } else if (state == State.WAIT_FOR_FULFILLED_BID) {
         System.out.println("GOING TO SELL");
         this.state = State.SELL;
       }
@@ -94,7 +112,7 @@ public class Bot implements IndicatorHandler, Closeable {
   }
 
   @Override
-  public void close() throws IOException{
+  public void close() throws IOException {
     System.out.println("CLOSING");
     this.exchange.close();
     this.indicatorFinder.close();
