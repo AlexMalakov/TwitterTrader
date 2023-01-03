@@ -1,9 +1,12 @@
 package malakov.tradingbot;
 //import org.knowm.xchange.coinbasepro.CoinbaseProExchange;
 
+import org.knowm.xchange.currency.CurrencyPair;
+
 import java.io.IOException;
 import java.util.HashMap;
 
+import malakov.tradingbot.orderbook.XchangeExchange;
 import malakov.tradingbot.tradeindicator.TwitterRestExplorer;
 
 public class Main {
@@ -19,8 +22,9 @@ public class Main {
     rules.put(neg, "elon neg");
     rules.put(pos, "elon pos");
     TwitterRestExplorer explorer = new TwitterRestExplorer(rules);
+    XchangeExchange exchange = new XchangeExchange(CurrencyPair.BTC_USD);
 
-    try (Bot bot = new Bot(5,explorer)) {
+    try (Bot bot = new Bot(5,explorer, exchange)) {
       bot.init();
 
       while (bot.isRunning())

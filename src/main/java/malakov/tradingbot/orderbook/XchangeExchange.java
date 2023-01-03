@@ -70,7 +70,7 @@ public class XchangeExchange implements Exchange{
     orderbookSubscription = exchange
             .getStreamingMarketDataService()
             .getOrderBook(this.currency)
-            .subscribe(bot::shouldTrade);
+            .subscribe(bot::onOrderBookChanged);
 
 
     if (StringUtils.isNotEmpty(System.getenv("api-key"))) {
@@ -78,12 +78,12 @@ public class XchangeExchange implements Exchange{
       userTradeSubsciption = exchange
               .getStreamingTradeService()
               .getUserTrades(this.currency)
-              .subscribe(bot::tradeUpdates);
+              .subscribe(bot::onTradeUpdated);
 
       orderChangeSubsciption = exchange
               .getStreamingTradeService()
               .getOrderChanges(this.currency)
-              .subscribe(bot::orderUpdates);
+              .subscribe(bot::onOrderChanged);
     }
   }
 
