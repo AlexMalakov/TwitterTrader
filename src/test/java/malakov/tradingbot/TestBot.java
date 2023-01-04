@@ -107,14 +107,25 @@ class MockExchange implements Exchange {
   }
 
   @Override
-  public void attemptBuy(BigDecimal amount, OrderBook book) throws IOException {
+  public String attemptLimitOrder(Order.OrderType type, BigDecimal amount, OrderBook book, BigDecimal price) throws IOException {
+    return "Hello!";
+  }
+
+  @Override
+  public BigDecimal getMarketPrice(Order.OrderType typeOfOrder, BigDecimal amountToBuy, OrderBook book) {
+    return BigDecimal.ZERO;
+  }
+
+  @Override
+  public void attemptMarketOrder(Order.OrderType type, BigDecimal amount, OrderBook book) throws IOException {
 
   }
 
   @Override
-  public void attemptSell(BigDecimal amount, OrderBook book) throws IOException {
+  public void cancelOrder(String id) throws IOException {
 
   }
+
 
   @Override
   public void close() {

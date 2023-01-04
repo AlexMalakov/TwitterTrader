@@ -9,6 +9,7 @@ import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.dto.Order;
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.trade.LimitOrder;
+import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.instrument.Instrument;
 
 import java.io.IOException;
@@ -90,16 +91,6 @@ public class XchangeExchange implements Exchange{
     }
   }
 
-  //this is an aggressive buy
-  public static BigDecimal getBidPrice(BigDecimal amount, OrderBook book) {
-    return getPrice(amount,book.getAsks());
-  }
-
-  //this is an aggressive sell
-  public static BigDecimal getAskPrice(BigDecimal amount, OrderBook book) {
-    return getPrice(amount, book.getBids());
-  }
-
   private static BigDecimal getPrice(BigDecimal amount, List<LimitOrder> list) {
     BigDecimal sum = BigDecimal.ZERO;
     BigDecimal totalCost = BigDecimal.ZERO;
@@ -128,30 +119,30 @@ public class XchangeExchange implements Exchange{
   }
 
   @Override
-  public void attemptBuy(BigDecimal amount, OrderBook book) throws IOException {
-    String ID = "BID" + System.currentTimeMillis();
-    BigDecimal price = getAskPrice(amount, book)
-            .add(new BigDecimal(100)) // very aggressive
-            .setScale(2, RoundingMode.HALF_UP);
-    LimitOrder buyOrder = new LimitOrder(
-            Order.OrderType.BID,amount, this.currency, ID, new Date(), price);
+  public String attemptLimitOrder(Order.OrderType type, BigDecimal amount, OrderBook book, BigDecimal targetPrice) throws IOException {
+    String ID = type.name() + System.currentTimeMillis();
+    LimitOrder order = new LimitOrder(type,amount, this.currency, ID, new Date(), targetPrice);
+    System.out.println("SENDING" + type.name() + " LIMIT ORDER: " + order);
+    exchange.getTradeService().placeLimitOrder(order);
+
+    return ID;
+  }
 
 
-    System.out.println("SENDING BUY ORDER: " + buyOrder);
-    exchange.getTradeService().placeLimitOrder(buyOrder);
+  @Override
+  public BigDecimal getMarketPrice(Order.OrderType typeOfOrder, BigDecimal amountToBuy, OrderBook book) {
+    if(typeOfOrder.equals(Order.OrderType.ASK)) {
+      return getPrice(amountToBuy, book.getBids());
+    }
+    return getPrice(amountToBuy, book.getAsks());
   }
 
   @Override
-  public void attemptSell(BigDecimal amount, OrderBook book) throws IOException {
-    String ID = "ASK" + System.currentTimeMillis();
-    BigDecimal price = getBidPrice(amount, book)
-            .add(new BigDecimal(1))
-            .setScale(2, RoundingMode.HALF_UP);
-    LimitOrder sellOrder = new LimitOrder(
-            Order.OrderType.ASK,amount, this.currency, ID, new Date(), price);
-
-    System.out.println("SENDING SELL ORDER: " + sellOrder);
-    exchange.getTradeService().placeLimitOrder(sellOrder);
+  public void attemptMarketOrder(Order.OrderType type, BigDecimal remainingAmount, OrderBook book) throws IOException{
+    String ID = type.name() + System.currentTimeMillis();
+    MarketOrder order = new MarketOrder(type, remainingAmount,currency, ID ,new Date());
+    System.out.println("SENDING " + type.name() + " MARKET ORDER: " + order);
+    exchange.getTradeService().placeMarketOrder(order);
   }
 
   private static String getenv(String key) {
@@ -159,6 +150,11 @@ public class XchangeExchange implements Exchange{
     if (value == null || value.equals(""))
       throw new NullPointerException("Env variable '" + key + "' is not defined");
     return value;
+  }
+
+  @Override
+  public void cancelOrder(String id) throws IOException{
+    exchange.getTradeService().cancelOrder(id);
   }
 
 }
