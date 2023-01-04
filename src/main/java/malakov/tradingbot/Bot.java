@@ -30,6 +30,7 @@ public class Bot implements IndicatorHandler, Closeable {
     /** Waiting for SELL order to fill */
     WAIT_FOR_FULFILLED_ASK,
 
+    /** liquidate position at any price available */
     DUMP,
 
     EXIT,
@@ -37,17 +38,16 @@ public class Bot implements IndicatorHandler, Closeable {
     ABORT
   }
 
-  private State state;
   private final Exchange exchange;
   private final BigDecimal tradeAmount;
-  private BigDecimal amountNotSold;
   private final Indicator indicatorFinder;
+  private State state;
+  private String currentOrderID;
+  private BigDecimal amountNotSold;
   private BigDecimal pricePayed;
-  private String currentOrderID = "";
 
 
   public Bot(double tradeAmount, Indicator indicator, Exchange exchange) {
-
     this.tradeAmount = new BigDecimal(tradeAmount);
     this.exchange = exchange;
     this.indicatorFinder = indicator;
@@ -56,7 +56,7 @@ public class Bot implements IndicatorHandler, Closeable {
     this.amountNotSold = BigDecimal.ZERO;
   }
 
-  public State getState() {
+  public synchronized State getState() {
     return state;
   }
 
@@ -101,6 +101,7 @@ public class Bot implements IndicatorHandler, Closeable {
       if(exchange.getMarketPrice(Order.OrderType.ASK,tradeAmount,book)
               .compareTo(new BigDecimal(".9").multiply(pricePayed)) < 0) {
         try {
+          System.out.println("PRICE HAS FALLEN BELOW THREASHOLD, CANCELING ORDER AND DUMPING");
           exchange.cancelOrder(this.currentOrderID);
           exchange.attemptMarketOrder(Order.OrderType.ASK,this.amountNotSold, book);
           state = State.DUMP;
@@ -111,7 +112,6 @@ public class Bot implements IndicatorHandler, Closeable {
       }
     }
   }
-
 
   public void onOrderChanged(Order order) {
     System.out.println("Bot.onOrderChanged(" + order + ")");
@@ -133,10 +133,11 @@ public class Bot implements IndicatorHandler, Closeable {
   }
 
   public void onTradeUpdated(Trade trade) {
+    System.out.println("Bot.onTradeUpdated(" + trade + ")");
+
     if(trade.getType().equals(Order.OrderType.BID)) {
       this.pricePayed = trade.getPrice();
     }
-    System.out.println("Bot.onTradeUpdated(" + trade + ")");
   }
 
   @Override
@@ -146,8 +147,4 @@ public class Bot implements IndicatorHandler, Closeable {
     this.indicatorFinder.close();
   }
 
-//  public static void main(String[] args) {
-//    Bot bot = new Bot(5, new TwitterExplorer("a","b", "c", "d", false,"bearer"));
-//    bot.init();
-//  }
 }

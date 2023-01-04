@@ -4,7 +4,7 @@ import malakov.tradingbot.orderbook.Exchange;
 import malakov.tradingbot.tradeindicator.Indicator;
 import malakov.tradingbot.tradeindicator.IndicatorHandler;
 
-import org.jetbrains.annotations.NotNull;
+
 import org.junit.Test;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order;
@@ -59,8 +59,7 @@ public class TestBot {
 
     bot.close();
   }
-
-  @NotNull
+  
   private Order makeOrder(Order.OrderStatus orderStatus) {
     Order filled = new LimitOrder(
             Order.OrderType.BID, BigDecimal.TEN, BTCUSD, "hello",

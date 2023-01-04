@@ -22,18 +22,21 @@ import java.io.IOException;
 
 public class TwitterRestExplorer extends Thread implements Indicator {
 
+  private static final String POSITIVE_RULE_TAG = "elon pos";
+  private static final String NEGATIVE_RULE_TAG = "elon neg";
   private final Map<String, String> rules;
   private final String bearerToken;
   private IndicatorHandler indicatorHandler;
   private volatile boolean isRunning;
 
   /**
-   * @param rules the key is the tag that will be used to find the tweet, while the value is the
-   *              rule created with the method outlined by the twitter api
+   *
+   * @param positiveRule Twitter filtered search rule for positive trend
+   * @param negativeRule Twitter filtered search rule for negative trend
    */
-  public TwitterRestExplorer(Map<String, String> rules) {
+  public TwitterRestExplorer(String positiveRule, String negativeRule) {
     super("Twitter Explorer Thread");
-    this.rules = rules;
+    this.rules = makeRulesMap(positiveRule, negativeRule);
     this.bearerToken = System.getenv("TWITTER_BEARER_TOKEN");
   }
 
@@ -53,21 +56,21 @@ public class TwitterRestExplorer extends Thread implements Indicator {
   @Override
   public void run() {
     System.out.println("Starting search");
-    try {
-      searchForTrend();
-    } catch (Exception ex) {
+    try{
+       searchForTrend();
+    }catch (Exception ex) {
       ex.printStackTrace();
     }
   }
 
   private void setupRules() {
-    try {
+    try{
       List<String> existingRules = getRules();
       if (existingRules.size() > 0) {
         deleteRules(existingRules);
       }
       createRules(rules);
-    } catch (Exception ex) {
+    }catch(Exception ex) {
       ex.printStackTrace();
     }
   }
@@ -79,20 +82,6 @@ public class TwitterRestExplorer extends Thread implements Indicator {
   }
 
 
-//  public static void main(String[] args) {
-//    String neg = "(elon musk) (moron OR bootlicker OR fraud OR little man OR epstein OR maxwell OR " +
-//            "stupid OR bad OR idiot OR pathetic OR alt right OR nazi) (-genius -tony -stark -thank -mr" +
-//            " -mr. -hero -doge -smart -brilliant -good -richest -influential)";
-//    String pos = "(elon musk) (genius OR tony stark OR thank OR mr musk OR mr. musk OR hero OR doge OR " +
-//            "smart OR brilliant OR good OR richest OR influential) (-moron -bootlicker -fraud -little -epstein -maxwell" +
-//            "-stupid -bad -idiot -pathetic -alt -nazi)";
-//    HashMap<String, String> map = new HashMap<>();
-//    map.put(neg, "elon neg");
-//    map.put(pos, "elon pos");
-//    TwitterRestExplorer explorer = new TwitterRestExplorer(map);
-//    explorer.init();
-//    explorer.searchForIndicator();
-//  }
 
 
   /*
@@ -117,22 +106,22 @@ public class TwitterRestExplorer extends Thread implements Indicator {
     HttpResponse response = httpClient.execute(httpGet);
     HttpEntity entity = response.getEntity();
     if (null != entity) {
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader((entity.getContent())))) {
+      try(BufferedReader reader = new BufferedReader(new InputStreamReader((entity.getContent())))) {
         String line = reader.readLine();
 
         while (line != null && isRunning) {
           System.out.println(line);
-          if (line.contains("elon pos")) {
+          if(line.contains(POSITIVE_RULE_TAG)) {
             posCounter++;
-          } else if (line.contains("elon neg")) {
+          }else if(line.contains(NEGATIVE_RULE_TAG)) {
             negCounter++;
           }
 
-          if (posCounter > negCounter && posCounter > 10) {
+          if(posCounter > negCounter && posCounter > 10) {
 
             indicatorHandler.onPositiveTrend();
 
-          } else if (posCounter < negCounter && posCounter > 10) {
+          }else if(posCounter < negCounter && posCounter > 10) {
             posCounter = 0;
             negCounter = 0;
           }
@@ -238,6 +227,13 @@ public class TwitterRestExplorer extends Thread implements Indicator {
       String result = sb.toString();
       return String.format(string, result.substring(0, result.length() - 1));
     }
+  }
+
+  private static Map<String, String> makeRulesMap(String positiveRule, String negativeRule) {
+    Map<String,String> result = new HashMap<>();
+    result.put(POSITIVE_RULE_TAG, positiveRule);
+    result.put(NEGATIVE_RULE_TAG, negativeRule);
+    return result;
   }
 }
 
