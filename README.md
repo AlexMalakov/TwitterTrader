@@ -1,7 +1,7 @@
 # About TwitterTrader
 
-TwitterTrader is an experimental project in linking crypto exchanges to the twitter api, which 
-allows the use of twitter data as a trade indicator. 
+TwitterTrader is an experimental project in linking crypto exchanges to Twitter REST API, which 
+allows the use of Twitter data as a trade indicator. 
 
 
 # How to use it?
